@@ -2,20 +2,25 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mind-ar-image-aframe.prod.js"></script>
+    
     <style>
-      body { margin: 0; overflow: hidden; background: #000; }
-      #ui { position: absolute; z-index: 1000; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-      button { padding: 20px 40px; font-size: 20px; background: #4CAF50; color: white; border: none; border-radius: 10px; cursor: pointer; }
+      body { margin: 0; overflow: hidden; }
+      /* A-Frame 啟動前強制全螢幕背景 */
+      a-scene { display: block; width: 100vw; height: 100vh; }
     </style>
   </head>
   <body>
-    <div id="ui">
-      <button id="start-btn">啟動 AR 掃描</button>
-    </div>
-
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" embedded vr-mode-ui="enabled: false">
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: yes;" 
+      embedded 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
+      
       <a-assets>
         <video id="v01" src="video01.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
       </a-assets>
@@ -23,26 +28,22 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-video src="#v01" width="1" height="1"></a-video>
+        <a-video src="#v01" width="1" height="0.6" position="0 0 0"></a-video>
+        <a-sphere radius="0.1" color="red" position="0 0 0.1"></a-sphere>
       </a-entity>
     </a-scene>
 
     <script>
-      const startBtn = document.querySelector('#start-btn');
-      const sceneEl = document.querySelector('a-scene');
-
-      startBtn.addEventListener('click', () => {
-        sceneEl.systems['mindar-image-system'].start();
-        document.querySelector('#v01').play().then(() => {
-           document.querySelector('#v01').pause();
-        });
-        document.querySelector('#ui').style.display = 'none';
-      });
-
-      sceneEl.addEventListener('targetFound', () => {
+      // 解決自動播放限制：當用戶第一次觸摸螢幕時，強制解鎖所有影片
+      document.body.addEventListener('click', function() {
         const v = document.querySelector('#v01');
-        v.muted = false;
         v.play();
+        console.log("Video Unlocked");
+      }, { once: true });
+
+      // 監聽錯誤
+      window.addEventListener('error', (e) => {
+        alert("發生錯誤: " + e.message);
       });
     </script>
   </body>
