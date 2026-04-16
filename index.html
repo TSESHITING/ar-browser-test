@@ -2,116 +2,47 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>NTUT AR Browser</title>
-    
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mind-ar-image-aframe.prod.js"></script>
-
     <style>
       body { margin: 0; overflow: hidden; background: #000; }
-      #ui-overlay {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: rgba(255, 255, 255, 0.95); z-index: 10000;
-      }
-      #start-btn {
-        padding: 20px 40px; font-size: 20px; background: #007AFF; color: white;
-        border: none; border-radius: 12px; cursor: pointer; font-weight: bold;
-      }
-      #status-text { margin-top: 15px; color: #666; font-size: 14px; }
-      .scanning-line {
-        position: absolute; top: 0; left: 0; width: 100%; height: 2px;
-        background: #00FF00; box-shadow: 0 0 10px #00FF00;
-        animation: scan 2s linear infinite; z-index: 10;
-      }
-      @keyframes scan { from { top: 0%; } to { top: 100%; } }
+      #ui { position: absolute; z-index: 1000; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+      button { padding: 20px 40px; font-size: 20px; background: #4CAF50; color: white; border: none; border-radius: 10px; cursor: pointer; }
     </style>
   </head>
-
   <body>
-    <div id="ui-overlay">
-      <button id="start-btn" disabled>正在載入資源...</button>
-      <div id="status-text">請確保在 HTTPS 環境下使用</div>
+    <div id="ui">
+      <button id="start-btn">啟動 AR 掃描</button>
     </div>
 
-    <div id="scanner-ui" style="display:none;" class="scanning-line"></div>
-
-    <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
-      embedded vr-mode-ui="enabled: false" 
-      device-orientation-permission-ui="enabled: false">
-      
-      <a-assets id="assets-list">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" embedded vr-mode-ui="enabled: false">
+      <a-assets>
         <video id="v01" src="video01.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
-        <video id="v02" src="video02.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="ar-targets-container"></a-entity>
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video src="#v01" width="1" height="1"></a-video>
+      </a-entity>
     </a-scene>
 
     <script>
-      const sceneEl = document.querySelector('a-scene');
       const startBtn = document.querySelector('#start-btn');
-      const statusText = document.querySelector('#status-text');
-      const container = document.querySelector('#ar-targets-container');
+      const sceneEl = document.querySelector('a-scene');
 
-      // 1. 自動生成 11 個追蹤實體 (減輕手寫負擔)
-      // 注意：這裡假設你的影片 ID 是 v01, v02... 
-      for (let i = 0; i < 11; i++) {
-        const indexStr = (i + 1).toString().padStart(2, '0');
-        const entity = document.createElement('a-entity');
-        entity.setAttribute('mindar-image-target', `targetIndex: ${i}`);
-        
-        const videoEntity = document.createElement('a-video');
-        videoEntity.setAttribute('src', `#v${indexStr}`);
-        videoEntity.setAttribute('width', '1');
-        videoEntity.setAttribute('height', '1'); // 根據你的書本尺寸調整比例
-        videoEntity.setAttribute('position', '0 0 0');
-        
-        entity.appendChild(videoEntity);
-        container.appendChild(entity);
-      }
-
-      // 2. 檢查場景載入狀態
-      sceneEl.addEventListener('loaded', () => {
-        startBtn.innerText = "點擊啟動 AR 掃描";
-        startBtn.disabled = false;
-        statusText.innerText = "資源準備就緒";
-      });
-
-      // 3. 點擊啟動邏輯
       startBtn.addEventListener('click', () => {
-        // 啟動 AR 引擎
         sceneEl.systems['mindar-image-system'].start();
-        
-        // 預啟動所有影片 (解決解碼延遲)
-        const videos = document.querySelectorAll('video');
-        videos.forEach(v => {
-          v.play().then(() => v.pause());
+        document.querySelector('#v01').play().then(() => {
+           document.querySelector('#v01').pause();
         });
-
-        document.querySelector('#ui-overlay').style.display = 'none';
-        document.querySelector('#scanner-ui').style.display = 'block';
+        document.querySelector('#ui').style.display = 'none';
       });
 
-      // 4. 監聽追蹤事件
-      sceneEl.addEventListener('targetFound', event => {
-        console.log("找到目標 Index:", event.detail.targetIndex);
-        const vidId = `v${(event.detail.targetIndex + 1).toString().padStart(2, '0')}`;
-        const vid = document.querySelector(`#${vidId}`);
-        if(vid) {
-          vid.muted = false; // 找到後取消靜音
-          vid.play();
-        }
-      });
-
-      sceneEl.addEventListener('targetLost', event => {
-        const vidId = `v${(event.detail.targetIndex + 1).toString().padStart(2, '0')}`;
-        const vid = document.querySelector(`#${vidId}`);
-        if(vid) vid.pause();
+      sceneEl.addEventListener('targetFound', () => {
+        const v = document.querySelector('#v01');
+        v.muted = false;
+        v.play();
       });
     </script>
   </body>
