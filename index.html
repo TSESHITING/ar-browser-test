@@ -1,61 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mind-ar-image-aframe.prod.js"></script>
-    <style>
-      body { margin: 0; overflow: hidden; }
-      #start-screen {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: white; z-index: 999; display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-      }
-      button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 8px; }
-    </style>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   </head>
-  <body>
-    <div id="start-screen">
-      <button id="startButton">開始 AR 體驗</button>
-      <p id="loading-text">資源載入中，請稍候...</p>
-    </div>
-
-    <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
-      embedded color-space="sRGB" 
-      renderer="colorManagement: true, physicallyCorrectLights" 
-      vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      
-      <a-assets>
-        <video id="v01" src="video01.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
-      </a-assets>
-
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-video src="#v01" width="1" height="0.6" position="0 0 0"></a-video>
-        <a-box position="0 0 -0.1" scale="0.1 0.1 0.1" color="red"></a-box>
-      </a-entity>
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs>
+      <a-box position="0 0.5 -2" color="red"></a-box>
+      <a-marker-camera preset="hiro"></a-marker-camera>
     </a-scene>
-
-    <script>
-      const sceneEl = document.querySelector('a-scene');
-      const startButton = document.querySelector('#startButton');
-      const loadingText = document.querySelector('#loading-text');
-
-      // 當場景載入完成
-      sceneEl.addEventListener("loaded", () => {
-        loadingText.innerText = "準備就緒！";
-        startButton.style.display = "block";
-      });
-
-      startButton.addEventListener('click', () => {
-        document.querySelector('#start-screen').style.display = "none";
-        // 啟動 AR
-        sceneEl.systems['mindar-image-system'].start();
-        // 啟動影片
-        document.querySelector('#v01').play();
-      });
-    </script>
   </body>
 </html>
