@@ -2,96 +2,63 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>極簡 WebAR 播放器</title>
-    
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mind-ar-image-aframe.prod.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mind-ar-image-aframe.prod.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; }
-      
-      /* 聲音提示 UI */
-      #sound-prompt {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 14px;
-        z-index: 1000;
-        pointer-events: none; /* 讓點擊穿透 */
-        display: none; /* 預設隱藏，找到目標時才顯示 */
+      body { margin: 0; overflow: hidden; }
+      #start-screen {
+        position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+        z-index: 1000; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; background: white;
       }
+      button { padding: 15px 30px; font-size: 18px; cursor: pointer; }
     </style>
   </head>
-
   <body>
-    <div id="sound-prompt">若無聲音，請點擊畫面一下</div>
+    <div id="start-screen">
+      <button id="startButton">點擊啟動 AR 相機</button>
+      <p style="margin-top: 10px; color: #666;">請確保使用 Safari 或 Chrome</p>
+    </div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: yes;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="v01" src="video01.mp4" loop="true" crossorigin="anonymous" playsinline muted></video>
-        <video id="v02" src="video02.mp4" loop="true" crossorigin="anonymous" playsinline muted></video>
+        <video id="v01" src="video01.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="target0" mindar-image-target="targetIndex: 0">
-        <a-video src="#v01" width="1" height="0.6" position="0 0 0"></a-video>
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video src="#v01" width="1" height="0.56" position="0 0 0"></a-video>
+        <a-box position="0 0 -0.1" scale="0.1 0.1 0.1" color="red"></a-box>
       </a-entity>
-
-      <a-entity id="target1" mindar-image-target="targetIndex: 1">
-        <a-video src="#v02" width="1" height="0.6" position="0 0 0"></a-video>
-      </a-entity>
-
     </a-scene>
 
     <script>
-      // 互動邏輯：處理聲音與 UI 提示
+      document.addEventListener("DOMContentLoaded", () => {
+        const startButton = document.querySelector("#startButton");
+        const sceneEl = document.querySelector("a-scene");
+        const video = document.querySelector("#v01");
 
-      const sceneEl = document.querySelector('a-scene');
-      const soundPrompt = document.querySelector('#sound-prompt');
-      const videos = document.querySelectorAll('video');
-      let hasInteracted = false; // 紀錄用戶是否點擊過
-
-      // 監聽 AR 系統找到目標的事件
-      sceneEl.addEventListener('targetFound', event => {
-        console.log("找到目標");
-        // 只有在用戶還沒點擊過時，才顯示聲音提示
-        if (!hasInteracted) {
-          soundPrompt.style.display = 'block';
-        }
-      });
-
-      // 監聽 AR 系統丟失目標的事件
-      sceneEl.addEventListener('targetLost', event => {
-        console.log("丟失目標");
-        soundPrompt.style.display = 'none';
-      });
-
-      // 用戶點擊畫面任何地方：開啟聲音並隱藏提示
-      window.addEventListener('click', () => {
-        if (!hasInteracted) {
-          console.log("用戶點擊，開啟聲音");
-          videos.forEach(v => {
-            v.muted = false; // 取消靜音
-            // 嘗試再次播放，確保聲音出來
-            v.play().catch(e => console.log("播放失敗:", e)); 
-          });
+        startButton.addEventListener('click', () => {
+          console.log("Starting AR...");
+          // 1. 啟動 AR
+          const arSystem = sceneEl.systems['mindar-image-system'];
+          arSystem.start(); 
           
-          hasInteracted = true;
-          soundPrompt.style.display = 'none'; // 永久隱藏提示
-        }
+          // 2. 解鎖影片
+          video.play().then(() => {
+            video.pause();
+          });
+
+          // 3. 移除啟動螢幕
+          document.querySelector("#start-screen").style.display = "none";
+        });
       });
     </script>
   </body>
